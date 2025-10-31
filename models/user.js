@@ -19,11 +19,6 @@ const userSchema = new mongoose.Schema(
       reports: { type: Boolean, default: false },
       telephony: { type: Boolean, default: false },
       automation: { type: Boolean, default: false },
-    },
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
     }
   },
   { timestamps: true }
