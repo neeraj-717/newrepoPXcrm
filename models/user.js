@@ -19,7 +19,8 @@ const userSchema = new mongoose.Schema(
       reports: { type: Boolean, default: false },
       telephony: { type: Boolean, default: false },
       automation: { type: Boolean, default: false },
-    }
+    },
+   
   },
   { timestamps: true }
 );
