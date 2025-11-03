@@ -1,6 +1,6 @@
 import express from "express";
 import rateLimit from "express-rate-limit";
-import { getUsers, login, resendOTP, signup, verifyOTP } from "../controllers/authController.js";
+import { getUsers, login, resendOTP, signup, toggleUserAccess, verifyOTP , userdata} from "../controllers/authController.js";
 import { verifyToken } from "../Middleware/Middleware.js";
 import User from "../models/user.js";
 
@@ -16,25 +16,21 @@ router.post("/verify-otp",verifyOTP);
 router.post("/login", login);
 router.get("/getuser", getUsers);
 router.post("/resend-otp", resendOTP);
+router.put("/toggle-access/:id", verifyToken, toggleUserAccess);
+router.get("/userdata", verifyToken, userdata);
 
-router.put("/:id/permissions", verifyToken, async (req, res) => {
+router.put("/:id", verifyToken, async (req, res) => {
   try {
-    const currentUser = await User.findById(req.user.id);
-    if (currentUser.role !== "SuperAdmin") {
-      return res.status(403).json({ message: "Access denied" });
-    }
-
-    const { key, value } = req.body; // 👈 single permission laa rahe
-
-    if (!key) return res.status(400).json({ message: "Permission key required" });
+    const { accessRevoked } = req.body;
+    console.log(req.body)
 
     const updated = await User.findByIdAndUpdate(
       req.params.id,
-      { $set: { [`permissions.${key}`]: value } },  // 👈 only that key update
+      { accessRevoked },  // ✅ consistent key
       { new: true }
     );
 
-    res.json({ message: "Permission updated ✅", updated });
+    res.json({ message: "Access updated ✅", updated });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

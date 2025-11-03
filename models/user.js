@@ -12,19 +12,14 @@ const userSchema = new mongoose.Schema(
       enum: ["SuperAdmin", "Admin"],
       default: "Admin",
     },
-    permissions: {
-      leads: { type: Boolean, default: true },
-      deals: { type: Boolean, default: false },
-      tasks: { type: Boolean, default: false },
-      reports: { type: Boolean, default: false },
-      telephony: { type: Boolean, default: false },
-      automation: { type: Boolean, default: false },
-    },
-   
+    registrationDate: { type: Date, default: Date.now },
+    isActive: { type: Boolean, default: true },
+    paymentStatus: { type: String, default: "Pending" },
+    accessRevoked: { type: Boolean, default: false }
   },
   { timestamps: true }
 );
 
-let user= mongoose.model("User", userSchema);
+let user = mongoose.model("User", userSchema);
 
 export default user
