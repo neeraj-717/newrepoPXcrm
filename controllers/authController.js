@@ -136,7 +136,7 @@ export const login = async (req, res) => {
 export const getUsers = async (req, res) => {
   try {
     const users = await User.find({}, "-password -otp -expiresAt");
-
+    console.log(users)
     return res.status(200).json({ success: true, data: users });
 
   } catch (err) {

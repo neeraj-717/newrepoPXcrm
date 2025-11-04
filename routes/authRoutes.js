@@ -26,7 +26,7 @@ router.put("/:id", verifyToken, async (req, res) => {
 
     const updated = await User.findByIdAndUpdate(
       req.params.id,
-      { accessRevoked },  // ✅ consistent key
+      { accessRevoked }, 
       { new: true }
     );
 
