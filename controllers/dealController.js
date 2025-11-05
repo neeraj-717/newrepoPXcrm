@@ -5,12 +5,12 @@ export const createDeal = async (req, res) => {
     console.log(req.body)
   try {
     const deal = await Deal.create({
-        Deal_title: req.body.Deal_title,
+         Deal_title: req.body.Deal_title,
         Value: req.body.Value,
         Close_date: req.body.Close_date,
         description: req.body.description,
         stage: req.body.stage,
-        user: req.user.id
+         user: req.user.id
     });
     res.status(201).json({ success: true, data: deal });
   } catch (err) {
@@ -21,7 +21,7 @@ export const createDeal = async (req, res) => {
 //  Get All Deals
 export const getDeals = async (req, res) => {
   try {
-    const deals = await Deal.findById({user:req.user.id});
+    const deals = await Deal.find();
     res.status(200).json({ success: true, data: deals });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
