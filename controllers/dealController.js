@@ -2,7 +2,7 @@ import Deal from "../models/desl.js";
 
 //  Create Deal
 export const createDeal = async (req, res) => {
-    console.log(req.body)
+    // console.log(req.body)
   try {
     const deal = await Deal.create({
          Deal_title: req.body.Deal_title,
@@ -21,7 +21,7 @@ export const createDeal = async (req, res) => {
 //  Get All Deals
 export const getDeals = async (req, res) => {
   try {
-    const deals = await Deal.find();
+    const deals = await Deal.find({user:req.user.id});
     res.status(200).json({ success: true, data: deals });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
