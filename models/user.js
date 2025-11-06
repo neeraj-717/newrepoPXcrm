@@ -37,7 +37,9 @@ const userSchema = new mongoose.Schema(
       status: String,
       paymentDate: { type: Date, default: Date.now }
     }],
-    accessRevoked: { type: Boolean, default: false }
+    accessRevoked: { type: Boolean, default: false },
+    status: { type: String, enum: ["online", "offline"], default: "offline" },
+    expiryDate: { type: Date }
   },
   { timestamps: true }
 );

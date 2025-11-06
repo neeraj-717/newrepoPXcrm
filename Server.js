@@ -11,6 +11,7 @@ import chatRoutes from "./routes/chatRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
 import { Server } from "socket.io";
 import http from "http";
+import User from "./models/user.js";
 
 dotenv.config();
 
@@ -33,15 +34,24 @@ const io = new Server(server, {
 });
 
 let onlineUsers = {}; // store users socket id
+const onlineUsersList = new Set();
 
 io.on("connection", (socket) => {
   console.log("User Connected:", socket.id);
 
   // user send his id after login
-  socket.on("register", (userId) => {
+  socket.on("register", async (userId) => {
     onlineUsers[userId] = socket.id;
-    io.emit("onlineUsers", Object.keys(onlineUsers))
-    console.log("Registered:", onlineUsers);
+    onlineUsersList.add(userId);
+    socket.userId = userId;
+    
+    // Update user status in database
+    await User.findByIdAndUpdate(userId, { status: "online" });
+    
+    // Emit to all clients (especially SuperAdmin)
+    io.emit("userOnline", userId);
+    io.emit("onlineUsers", Array.from(onlineUsersList));
+    console.log("User online:", userId);
   });
   
   
@@ -60,11 +70,21 @@ io.on("connection", (socket) => {
 });
 
 
-  socket.on("disconnect", () => {
+  socket.on("disconnect", async () => {
     console.log("User disconnected:", socket.id);
-    Object.keys(onlineUsers).forEach((key) => {
-      if (onlineUsers[key] === socket.id) delete onlineUsers[key];
-    });
+    
+    if (socket.userId) {
+      // Update user status in database
+      await User.findByIdAndUpdate(socket.userId, { status: "offline" });
+      
+      onlineUsersList.delete(socket.userId);
+      delete onlineUsers[socket.userId];
+      
+      // Emit to all clients (especially SuperAdmin)
+      io.emit("userOffline", socket.userId);
+      io.emit("onlineUsers", Array.from(onlineUsersList));
+      console.log("User offline:", socket.userId);
+    }
   });
 
 
