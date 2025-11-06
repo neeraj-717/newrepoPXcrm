@@ -42,7 +42,7 @@ export const getChat = async (req, res) => {
 export const getAllChats = async (req, res) => {
   try {
     let chats = await Chat.find().sort({ timestamp: -1 });
-    console.log(chats)
+    // console.log(chats)
     res.json(chats);
   } catch (error) {
     res.status(500).json({ message: error.message });

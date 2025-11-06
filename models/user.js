@@ -16,6 +16,27 @@ const userSchema = new mongoose.Schema(
     registrationDate: { type: Date, default: Date.now },
     isActive: { type: Boolean, default: true },
     paymentStatus: { type: String, default: "Pending" },
+    activePlan: { type: String },
+    paymentHistory: [{
+      razorpay_order_id: String,
+      razorpay_payment_id: String,
+      razorpay_signature: String,
+      planName: String,
+      amount: Number,
+      prefill: {
+        name: String,
+        email: String,
+        contact: String
+      },
+      notes: {
+        address: String
+      },
+      theme: {
+        color: String
+      },
+      status: String,
+      paymentDate: { type: Date, default: Date.now }
+    }],
     accessRevoked: { type: Boolean, default: false }
   },
   { timestamps: true }
