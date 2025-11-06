@@ -21,7 +21,7 @@ export const createCall = async (req, res) => {
 // Get All Calls
 export const getCalls = async (req, res) => {
   try {
-    const calls = await Call.find();
+    const calls = await Call.find({user:req.user.id});
     res.status(200).json({ success: true, data: calls });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
