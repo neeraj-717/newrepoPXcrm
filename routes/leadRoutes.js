@@ -6,11 +6,11 @@ import {
   updateLead,
   deleteLead,
 } from "../controllers/leadController.js";
-import { verifyToken } from "../Middleware/Middleware.js";
+import { verifytoken } from "../Middleware/Middleware.js";
 
 const router = express.Router();
 
-router.route("/").post(verifyToken, createLead).get(verifyToken, getLeads);
-router.route("/:id").get(verifyToken, getLeadById).put(verifyToken, updateLead).delete(verifyToken, deleteLead);
+router.route("/").post(verifytoken, createLead).get(verifytoken, getLeads);
+router.route("/:id").get(verifytoken, getLeadById).put(verifytoken, updateLead).delete(verifytoken, deleteLead);
 
 export default router;

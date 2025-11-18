@@ -1,6 +1,26 @@
 import Lead from "../models/lead.js";
 import user from "../models/user.js";
 
+// Format phone number to standard format
+const formatPhoneNumber = (phoneNumber) => {
+  if (!phoneNumber) return phoneNumber;
+  
+  // Remove all non-digit characters
+  let cleaned = phoneNumber.replace(/\D/g, '');
+  
+  // If 10 digit number, keep as is (Indian mobile number)
+  if (cleaned.length === 10) {
+    return cleaned;
+  }
+  
+  // If starts with 91 and has 12 digits, remove country code
+  if (cleaned.length === 12 && cleaned.startsWith('91')) {
+    return cleaned.substring(2);
+  }
+  
+  return phoneNumber; // Return as is if format not recognized
+};
+
 export const createLead = async (req, res) => {
     console.log(req.body)
     try {
@@ -8,7 +28,7 @@ export const createLead = async (req, res) => {
             company: req.body.company,
             contact: req.body.contact,
             email: req.body.email,
-            phone: req.body.phone,
+            phone: formatPhoneNumber(req.body.phone),
             source: req.body.source,
             industry: req.body.industry,
             notes: req.body.notes,
@@ -46,6 +66,11 @@ export const getLeadById = async (req, res) => {
 // Update Lead
 export const updateLead = async (req, res) => {
     try {
+        // Format phone number if provided
+        if (req.body.phone) {
+            req.body.phone = formatPhoneNumber(req.body.phone);
+        }
+        
         const lead = await Lead.findByIdAndUpdate(req.params.id, req.body, {
             new: true,
         });

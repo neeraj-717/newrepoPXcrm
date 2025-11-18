@@ -6,8 +6,18 @@ const taskSchema = new mongoose.Schema(
     description: String,
     type: { type: String, default: "Call" },
     priority: { type: String, default: "Medium" },
-    dueDate: { type: String },
-    completed: { type: Boolean, default: false }, // ✅ new field
+    dueDate: { type: Date },
+    completed: { type: Boolean, default: false },
+    relatedLead: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Lead",
+      required: false
+    },
+    relatedDeal: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Deal",
+      required: false
+    },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

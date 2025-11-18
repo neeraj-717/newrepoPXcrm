@@ -16,7 +16,9 @@ const userSchema = new mongoose.Schema(
     registrationDate: { type: Date, default: Date.now },
     isActive: { type: Boolean, default: true },
     paymentStatus: { type: String, default: "Pending" },
-    activePlan: { type: String },
+    activePlan: { type: String, enum: ["free", "premium", "3 Months Plan", "6 Months Plan", "1 Year Plan", "2 Year Plan"], default: "free" },
+    planStartDate: { type: Date },
+    planExpiryDate: { type: Date },
     paymentHistory: [{
       razorpay_order_id: String,
       razorpay_payment_id: String,

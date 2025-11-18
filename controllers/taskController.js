@@ -24,7 +24,7 @@ export const createTask = async (req, res) => {
 // Get all tasks
 export const getTasks = async (req, res) => {
   try {
-    const tasks = await Task.find().sort({ createdAt: -1 });
+    const tasks = await Task.find({ user: req.user.id }).sort({ createdAt: -1 });
     res.status(200).json(tasks);
   } catch (err) {
     res.status(500).json({ message: "Error fetching tasks", error: err.message });
@@ -34,9 +34,11 @@ export const getTasks = async (req, res) => {
 export const updateTask = async (req, res) => {
   try {
     const { id } = req.params;
-    const updatedTask = await Task.findByIdAndUpdate(id, req.body, {
-      new: true,
-    });
+    const updatedTask = await Task.findOneAndUpdate(
+      { _id: id, user: req.user.id },
+      req.body,
+      { new: true }
+    );
     if (!updatedTask)
       return res.status(404).json({ message: "Task not found" });
 
@@ -48,9 +50,31 @@ export const updateTask = async (req, res) => {
 
 export const deleteTask = async (req, res) => {
     try {
-        await Task.findByIdAndDelete(req.params.id);
+        const task = await Task.findOneAndDelete({ _id: req.params.id, user: req.user.id });
+        if (!task) return res.status(404).json({ message: "Task not found" });
         res.json({ message: "Task deleted" });
     } catch (err) {
         res.status(500).json({ message: err.message });
+    }
+}
+
+// Get calendar data for a specific month
+export const getCalendarData = async (req, res) => {
+    try {
+        const { year, month } = req.query;
+        const startDate = new Date(year, month - 1, 1);
+        const endDate = new Date(year, month, 0);
+        
+        const tasks = await Task.find({
+            user: req.user.id,
+            dueDate: {
+                $gte: startDate.toISOString(),
+                $lte: endDate.toISOString()
+            }
+        }).sort({ dueDate: 1 });
+        
+        res.status(200).json(tasks);
+    } catch (err) {
+        res.status(500).json({ message: "Error fetching calendar data", error: err.message });
     }
 }

@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import User from "../models/user.js";
 
-export const verifyToken = (req, res, next) => {
+export const verifytoken = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   // Check if authorization header exists and starts with "Bearer"
@@ -13,6 +13,30 @@ export const verifyToken = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Skip plan expiry check for userdata endpoint
+    if (req.path !== '/userdata') {
+      // Check user plan expiry
+      const user = await User.findById(decoded.id);
+      if (user && user.planExpiryDate && new Date() > new Date(user.planExpiryDate)) {
+        user.accessRevoked = true;
+        await user.save();
+        return res.status(403).json({ 
+          status: false, 
+          msg: "Your plan has expired. Please upgrade to continue.",
+          planExpired: true 
+        });
+      }
+      
+      if (user && user.accessRevoked) {
+        return res.status(403).json({ 
+          status: false, 
+          msg: "Access revoked. Contact support.",
+          accessRevoked: true 
+        });
+      }
+    }
+    
     req.user = decoded; // add decoded token info to req
     next(); // allow request to proceed
   } catch (err) {

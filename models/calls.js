@@ -2,19 +2,32 @@ import mongoose from "mongoose";
 
 const callSchema = new mongoose.Schema(
   {
-    lead: { type: String, required: true },
-    duration: { type: Number, required: true },
-    outcome: { type: String, required: true },
-    notes: { type: String, required: true },
-    status: {
-        type: String,
-        enum: ["Scheduled", "Completed", "Cancelled"],
-        default: "Scheduled",
+    leadId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Lead",
+      required: true
     },
-    user: {
+    phoneNumber: { type: String, required: true },
+    callSid: { type: String }, // Twilio call SID
+    messageSid: { type: String }, // Twilio message SID for SMS
+    message: { type: String }, // SMS message content
+    duration: { type: Number, default: 0 },
+    status: {
+      type: String,
+      enum: ["initiated", "ringing", "answered", "completed", "busy", "failed", "sent", "delivered", "read"],
+      default: "initiated"
+    },
+    type: {
+      type: String,
+      enum: ["call", "sms"],
+      default: "call"
+    },
+    notes: { type: String },
+    endTime: { type: Date },
+    userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      required: true
     }
   },
   { timestamps: true }

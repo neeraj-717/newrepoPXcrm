@@ -1,12 +1,13 @@
 import express from "express";
-import { createTask, deleteTask, getTasks, updateTask } from "../controllers/taskController.js";
-import { verifyToken } from "../Middleware/Middleware.js";
+import { createTask, deleteTask, getTasks, updateTask, getCalendarData } from "../controllers/taskController.js";
+import { verifytoken } from "../Middleware/Middleware.js";
 
 const router = express.Router();
 
-router.post("/", verifyToken, createTask);
-router.get("/", verifyToken, getTasks);
-router.put("/:id", verifyToken, updateTask);
-router.delete("/:id", verifyToken, deleteTask);
+router.post("/", verifytoken, createTask);
+router.get("/", verifytoken, getTasks);
+router.get("/calendar", verifytoken, getCalendarData);
+router.put("/:id", verifytoken, updateTask);
+router.delete("/:id", verifytoken, deleteTask);
 
 export default router;

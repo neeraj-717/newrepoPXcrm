@@ -2,6 +2,8 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import axios from "axios";
 import dotenv from "dotenv";
+import fs from "fs";
+import path from "path";
 import User from "../models/user.js";
 
 dotenv.config();
@@ -103,7 +105,7 @@ export const verifyOTP = async (req, res) => {
 // ✅ Login
 export const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, planType } = req.body;
 
     if (!email || !password)
       return res.status(400).json({ message: "Email & Password required" });
@@ -114,6 +116,43 @@ export const login = async (req, res) => {
     const isMatch = await bcrypt.compare(password, UserData.password);
     if (!isMatch) return res.status(400).json({ message: "Wrong password" });
 
+    // Check if user already exists and send welcome back message
+    let welcomeMessage = "Login successful";
+    let isExistingUser = true;
+    
+    // If user is logging in for first time or choosing plan
+    if (planType && (!UserData.activePlan || UserData.activePlan === "free")) {
+      const now = new Date();
+      UserData.activePlan = planType;
+      UserData.planStartDate = now;
+      
+      if (planType === "free") {
+        // Free plan expires in 2 days
+        UserData.planExpiryDate = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
+        welcomeMessage = "Welcome! Your free 2-day trial has started.";
+        isExistingUser = false;
+      } else {
+        // Premium plan (set expiry as needed)
+        UserData.planExpiryDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+        welcomeMessage = "Welcome! Your premium plan is now active.";
+      }
+      
+      await UserData.save();
+    } else if (UserData.activePlan) {
+      welcomeMessage = `Welcome back, ${UserData.name}! Your ${UserData.activePlan} plan is active.`;
+    }
+
+    // Check if plan has expired
+    const now = new Date();
+    if (UserData.planExpiryDate && now > UserData.planExpiryDate) {
+      UserData.accessRevoked = true;
+      await UserData.save();
+      return res.status(403).json({ 
+        message: "Your plan has expired. Please upgrade to continue.",
+        planExpired: true 
+      });
+    }
+
     const token = jwt.sign(
       { id: UserData._id, role: UserData.role },
       process.env.JWT_SECRET,
@@ -121,9 +160,17 @@ export const login = async (req, res) => {
     );
 
     return res.status(200).json({
-      message: "Login successful",
+      message: welcomeMessage,
       token,
-      user: { id: UserData._id, name: UserData.name, email: UserData.email, role: UserData.role },
+      user: { 
+        id: UserData._id, 
+        name: UserData.name, 
+        email: UserData.email, 
+        role: UserData.role,
+        activePlan: UserData.activePlan,
+        planExpiryDate: UserData.planExpiryDate
+      },
+      isExistingUser
     });
 
   } catch (err) {
@@ -189,7 +236,15 @@ export const toggleUserAccess = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    user.accessRevoked = !user.accessRevoked; 
+    user.accessRevoked = !user.accessRevoked;
+    
+    // Validate before saving
+    const validationError = user.validateSync();
+    if (validationError) {
+      console.error('Validation Error:', validationError);
+      return res.status(400).json({ message: "Invalid user data", error: validationError.message });
+    }
+    
     await user.save();
 
     res.json({
@@ -198,8 +253,8 @@ export const toggleUserAccess = async (req, res) => {
     });
 
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error toggling access" });
+    console.error('Toggle Access Error:', error);
+    res.status(500).json({ message: "Error toggling access", error: error.message });
   }
 };
 
@@ -211,9 +266,99 @@ export const userdata = async(req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    res.json({ user });
+    // Check if plan expired
+    const now = new Date();
+    let planExpired = false;
+    if (user.planExpiryDate && now > user.planExpiryDate) {
+      planExpired = true;
+      if (!user.accessRevoked) {
+        user.accessRevoked = true;
+        await user.save();
+      }
+    }
+
+    res.json({ 
+      user,
+      planExpired,
+      message: planExpired ? "Your plan has expired. Please upgrade to continue." : "User data fetched successfully"
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error fetching user data" });
+  }
+}
+
+// Select Plan
+export const selectPlan = async (req, res) => {
+  try {
+    const { planType } = req.body;
+    const userId = req.user.id;
+    
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const now = new Date();
+    user.activePlan = planType;
+    user.planStartDate = now;
+    
+    if (planType === "free") {
+      user.planExpiryDate = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
+    } else {
+      user.planExpiryDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    }
+    
+    user.accessRevoked = false;
+    await user.save();
+
+    res.json({ 
+      message: `${planType} plan activated successfully!`,
+      user: {
+        activePlan: user.activePlan,
+        planExpiryDate: user.planExpiryDate
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error selecting plan" });
+  }
+}
+
+// Update Profile with Image Upload
+export const updateProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { name, email } = req.body;
+    
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Delete old profile image if new one is uploaded
+    if (req.file && user.profileImage) {
+      const oldImagePath = path.join('uplods/profiles/', path.basename(user.profileImage));
+      if (fs.existsSync(oldImagePath)) {
+        fs.unlinkSync(oldImagePath);
+      }
+    }
+
+    // Update user data
+    if (name) user.name = name;
+    if (email) user.email = email;
+    if (req.file) user.profileImage = `/uplods/profiles/${req.file.filename}`;
+
+    await user.save();
+
+    res.json({
+      message: "Profile updated successfully",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        profileImage: user.profileImage,
+        role: user.role
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error updating profile" });
   }
 }

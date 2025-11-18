@@ -1,7 +1,8 @@
 import express from "express";
 import rateLimit from "express-rate-limit";
-import { getUsers, login, resendOTP, signup, toggleUserAccess, verifyOTP , userdata} from "../controllers/authController.js";
-import { verifyToken } from "../Middleware/Middleware.js";
+import { getUsers, login, resendOTP, signup, toggleUserAccess, verifyOTP , userdata, selectPlan, updateProfile} from "../controllers/authController.js";
+import { verifytoken } from "../Middleware/Middleware.js";
+import { upload } from "../config/multer.js";
 import User from "../models/user.js";
 
 const router = express.Router();
@@ -16,10 +17,12 @@ router.post("/verify-otp",verifyOTP);
 router.post("/login", login);
 router.get("/getuser", getUsers);
 router.post("/resend-otp", resendOTP);
-router.put("/toggle-access/:id", verifyToken, toggleUserAccess);
-router.get("/userdata", verifyToken, userdata);
+router.put("/toggle-access/:id", verifytoken, toggleUserAccess);
+router.get("/userdata", verifytoken, userdata);
+router.post("/select-plan", verifytoken, selectPlan);
+router.put("/update-profile", verifytoken, upload.single('profileImage'), updateProfile);
 
-router.put("/:id", verifyToken, async (req, res) => {
+router.put("/:id", verifytoken, async (req, res) => {
   try {
     const { accessRevoked } = req.body;
     console.log(req.body)
@@ -37,7 +40,7 @@ router.put("/:id", verifyToken, async (req, res) => {
 });
 
 
-router.get("/admins", verifyToken, async (req, res) => {
+router.get("/admins", verifytoken, async (req, res) => {
     // console.log("Allusersreq.user", req.user)
   try {
     const currentUser = await User.findById(req.user.id);

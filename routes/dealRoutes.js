@@ -1,16 +1,16 @@
 import express from "express";
 import { createDeal, getDeals, deleteDeal } from "../controllers/dealController.js";
-import {  verifyToken } from "../Middleware/Middleware.js";
+import {  verifytoken } from "../Middleware/Middleware.js";
 import Deal from "../models/desl.js";
 
 const router = express.Router();
 
-router.post("/", verifyToken, createDeal);
-router.get("/", verifyToken, getDeals);
-router.delete("/:id", verifyToken, deleteDeal);
-// router.put("/:id", verifyToken, updateDeal);
+router.post("/", verifytoken, createDeal);
+router.get("/", verifytoken, getDeals);
+router.delete("/:id", verifytoken, deleteDeal);
+// router.put("/:id", verifytoken, updateDeal);
 
-router.put("/:id", verifyToken, async (req, res) => {
+router.put("/:id", verifytoken, async (req, res) => {
   try {
     const updatedDeal = await Deal.findByIdAndUpdate(
       req.params.id,
